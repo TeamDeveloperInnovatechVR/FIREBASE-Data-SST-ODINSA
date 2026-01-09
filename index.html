@@ -192,132 +192,158 @@
     }
 
     function mostrarDispositivo(dispositivo, container) {
-      container.innerHTML = `
-        <h2 class="text-lg font-bold text-[#1e2146]">📌 Dispositivo ID: ${dispositivo.ID}</h2>
-        <p class="text-sm text-gray-700">⏱️ Tiempo de uso: ${formatTiempo(dispositivo.UsageTime)}</p>
-        <p class="text-sm text-gray-500">Licencia: ${dispositivo.LicenseLimit || "Sin definir"}</p>
-        <h3 class="mt-2 font-semibold text-[#f28a1a]">Capacitaciones:</h3>
-        <div id="capacitacionesList" class="max-h-60 overflow-y-auto border p-2 rounded bg-gray-50"></div>
-      `;
+  container.innerHTML = `
+    <h2 class="text-lg font-bold text-[#1e2146]">📌 Dispositivo ID: ${dispositivo.ID}</h2>
+    <p class="text-sm text-gray-700">⏱️ Tiempo de uso: ${formatTiempo(dispositivo.UsageTime)}</p>
+    <p class="text-sm text-gray-500">Licencia: ${dispositivo.LicenseLimit || "Sin definir"}</p>
+    <h3 class="mt-2 font-semibold text-[#f28a1a]">Capacitaciones:</h3>
+    <div id="capacitacionesList" class="max-h-60 overflow-y-auto border p-2 rounded bg-gray-50"></div>
+  `;
 
-      const capacitacionesList = container.querySelector("#capacitacionesList");
-      const graficoMensualContainer = document.getElementById("graficoMensualContainer");
-      graficoMensualContainer.innerHTML = "";
+  const capacitacionesList = container.querySelector("#capacitacionesList");
+  const graficoMensualContainer = document.getElementById("graficoMensualContainer");
+  graficoMensualContainer.innerHTML = "";
 
-      if (dispositivo.Trainings && dispositivo.Trainings.length > 0) {
-        dispositivo.Trainings.forEach(cap => {
-          const item = document.createElement("div");
-          item.classList.add("mb-3", "border-b", "pb-2");
+  // 🔥 ORDEN de los meses en inglés según el año natural
+  const ordenMeses = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
 
-          const nombreTraducido = traducirEntrenamiento(cap.TrainingName);
-          const texto = `${nombreTraducido} - ${formatTiempo(cap.TotalTime || 0)}`;
-          item.innerHTML = `<p class="text-sm font-semibold text-[#1e2146]">${texto}</p>`;
+  if (dispositivo.Trainings && dispositivo.Trainings.length > 0) {
+    dispositivo.Trainings.forEach(cap => {
+      const item = document.createElement("div");
+      item.classList.add("mb-3", "border-b", "pb-2");
 
-          // ✅ Años y meses
-          if (cap.YearList && cap.YearList.length > 0) {
-            const añosDiv = document.createElement("div");
-            añosDiv.classList.add("ml-4", "text-sm");
+      const nombreTraducido = traducirEntrenamiento(cap.TrainingName);
+      const texto = `${nombreTraducido} - ${formatTiempo(cap.TotalTime || 0)}`;
+      item.innerHTML = `<p class="text-sm font-semibold text-[#1e2146]">${texto}</p>`;
 
-            cap.YearList.forEach(yearData => {
-              const año = yearData.Year;
-              const meses = yearData.Months;
-              
-              const añoBtn = document.createElement("button");
-              añoBtn.textContent = `📅 ${año}`;
-              añoBtn.classList.add(
-                "mt-2", "bg-[#1e2146]", "text-white", "px-3", "py-1", "rounded-md",
-                "hover:bg-[#f28a1a]", "transition", "block", "w-full", "text-left"
-              );
+      // ✅ Años y meses
+      if (cap.YearList && cap.YearList.length > 0) {
+        const añosDiv = document.createElement("div");
+        añosDiv.classList.add("ml-4", "text-sm");
 
-              const mesesDiv = document.createElement("div");
-              mesesDiv.classList.add("ml-6", "hidden", "mt-1", "text-gray-700", "bg-gray-100", "rounded", "p-2");
+        cap.YearList.forEach(yearData => {
+          const año = yearData.Year;
+          const meses = yearData.Months;
+          
+          const añoBtn = document.createElement("button");
+          añoBtn.textContent = `📅 ${año}`;
+          añoBtn.classList.add(
+            "mt-2", "bg-[#1e2146]", "text-white", "px-3", "py-1", "rounded-md",
+            "hover:bg-[#f28a1a]", "transition", "block", "w-full", "text-left"
+          );
 
-              Object.entries(meses).forEach(([mes, valor]) => {
-                const p = document.createElement("p");
-                const mesTraducido = traducirMes(mes);
-                p.textContent = `• ${mesTraducido}: ${formatTiempo(valor)}`;
-                mesesDiv.appendChild(p);
-              });
+          const mesesDiv = document.createElement("div");
+          mesesDiv.classList.add("ml-6", "hidden", "mt-1", "text-gray-700", "bg-gray-100", "rounded", "p-2");
 
-              // Botón gráfico mensual (por año)
-              const btnGrafico = document.createElement("button");
-              btnGrafico.textContent = "📊 Ver gráfico mensual";
-              btnGrafico.classList.add("mt-2", "bg-[#f28a1a]", "text-white", "px-3", "py-1", "rounded-md", "hover:bg-[#d97706]", "transition");
-              btnGrafico.onclick = () => {
-                graficoMensualContainer.innerHTML = "";
-                generarGraficoMensualPorAño(cap, año);
-              };
-              mesesDiv.appendChild(btnGrafico);
+          // 🔥 MESES ORDENADOS (no alfabético)
+          ordenMeses.forEach(mes => {
+            if (meses[mes] !== undefined) {
+              const p = document.createElement("p");
+              const mesTraducido = traducirMes(mes);
+              p.textContent = `• ${mesTraducido}: ${formatTiempo(meses[mes])}`;
+              mesesDiv.appendChild(p);
+            }
+          });
 
-              añoBtn.onclick = () => {
-                mesesDiv.classList.toggle("hidden");
-              };
+          // Botón gráfico mensual (por año)
+          const btnGrafico = document.createElement("button");
+          btnGrafico.textContent = "📊 Ver gráfico mensual";
+          btnGrafico.classList.add("mt-2", "bg-[#f28a1a]", "text-white", "px-3", "py-1", "rounded-md", "hover:bg-[#d97706]", "transition");
+          btnGrafico.onclick = () => {
+            graficoMensualContainer.innerHTML = "";
+            generarGraficoMensualPorAño(cap, año);
+          };
+          mesesDiv.appendChild(btnGrafico);
 
-              añosDiv.appendChild(añoBtn);
-              añosDiv.appendChild(mesesDiv);
-            });
+          añoBtn.onclick = () => {
+            mesesDiv.classList.toggle("hidden");
+          };
 
-            item.appendChild(añosDiv);
-          }
-
-          capacitacionesList.appendChild(item);
+          añosDiv.appendChild(añoBtn);
+          añosDiv.appendChild(mesesDiv);
         });
-      } else {
-        capacitacionesList.innerHTML = "<p class='text-gray-500'>No hay capacitaciones</p>";
+
+        item.appendChild(añosDiv);
       }
 
-      generarGraficos(dispositivo);
-    }
+      capacitacionesList.appendChild(item);
+    });
+  } else {
+    capacitacionesList.innerHTML = "<p class='text-gray-500'>No hay capacitaciones</p>";
+  }
 
-    // ✅ FUNCIÓN: gráfico mensual por año
-    function generarGraficoMensualPorAño(capacitacion, año) {
-      const yearData = capacitacion.YearList.find(y => y.Year === año);
-      if (!yearData) return;
-      
-      const container = document.getElementById("graficoMensualContainer");
-      const meses = yearData.Months;
+  generarGraficos(dispositivo);
+}
+   // ✅ FUNCIÓN: gráfico mensual por año - MESES ORDENADOS
+// ✅ FUNCIÓN: gráfico mensual por año - MESES ORDENADOS
+function generarGraficoMensualPorAño(capacitacion, año) {
+  const yearData = capacitacion.YearList.find(y => y.Year === año);
+  if (!yearData) return;
+  
+  const container = document.getElementById("graficoMensualContainer");
+  const meses = yearData.Months;
 
-      // Traducir labels de meses
-      const labels = Object.keys(meses).map(mes => traducirMes(mes));
-      const valores = Object.values(meses);
+  // 🔥 ORDEN de los meses en inglés según el año natural
+  const ordenMesesIngles = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
 
-      const canvas = document.createElement("canvas");
-      canvas.classList.add("w-full", "h-64");
-      container.appendChild(canvas);
+  // Filtrar solo los meses que existen en los datos y ordenarlos
+  const mesesOrdenados = ordenMesesIngles.filter(mes => meses.hasOwnProperty(mes));
+  
+  // Obtener los valores en el orden correcto
+  const valoresOrdenados = mesesOrdenados.map(mes => meses[mes]);
+  
+  // Traducir labels de meses para mostrar
+  const labelsTraducidos = mesesOrdenados.map(mes => traducirMes(mes));
 
-      if (graficoMensualInstance) graficoMensualInstance.destroy();
+  const canvas = document.createElement("canvas");
+  canvas.classList.add("w-full", "h-64");
+  container.appendChild(canvas);
 
-      const nombreTraducido = traducirEntrenamiento(capacitacion.TrainingName);
-      
-      graficoMensualInstance = new Chart(canvas, {
-        type: "bar",
-        data: {
-          labels,
-          datasets: [{
-            label: `Tiempo por mes (${año}) - ${nombreTraducido}`,
-            data: valores,
-            backgroundColor: "#f28a1a"
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              callbacks: {
-                label: context => formatTiempo(context.raw)
-              }
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              ticks: { callback: value => formatTiempo(value) }
-            }
+  if (graficoMensualInstance) graficoMensualInstance.destroy();
+
+  const nombreTraducido = traducirEntrenamiento(capacitacion.TrainingName);
+  
+  graficoMensualInstance = new Chart(canvas, {
+    type: "bar",
+    data: {
+      labels: labelsTraducidos,
+      datasets: [{
+        label: `Tiempo por mes (${año}) - ${nombreTraducido}`,
+        data: valoresOrdenados,
+        backgroundColor: "#f28a1a"
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: context => formatTiempo(context.raw)
           }
         }
-      });
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { callback: value => formatTiempo(value) }
+        },
+        x: {
+          // Asegurar que el orden se mantenga en el eje X
+          ticks: {
+            // Los labels ya están en el orden correcto gracias a mesesOrdenados
+          }
+        }
+      }
     }
+  });
+}
 
     function generarGraficos(dispositivo) {
       if (!dispositivo.Trainings || dispositivo.Trainings.length === 0) {
